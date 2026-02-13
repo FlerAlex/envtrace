@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/FlerAlex/envtrace/actions/workflows/ci.yml/badge.svg)](https://github.com/FlerAlex/envtrace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![crates.io](https://img.shields.io/crates/v/envtrace.svg)](https://crates.io/crates/envtrace)
 [![Rust](https://img.shields.io/badge/rust-edition_2024-orange.svg)](https://www.rust-lang.org)
 
 Trace where environment variables are defined and modified through shell startup sequences.
@@ -12,10 +13,10 @@ Shell startup is complex -- variables can be set, overridden, or appended across
 
 ## Installation
 
-### From source
+### From crates.io
 
 ```bash
-cargo install --path .
+cargo install envtrace
 ```
 
 ### Pre-built binaries
