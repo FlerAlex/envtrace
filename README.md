@@ -25,60 +25,194 @@ Download from [GitHub Releases](https://github.com/FlerAlex/envtrace/releases).
 
 ## Usage
 
-### Trace a variable (default mode)
+### Trace a variable
+
+The default mode traces a variable through the shell startup sequence and shows every file that touches it:
 
 ```bash
-# Trace PATH through the default shell context
 envtrace PATH
+```
 
-# Trace in a specific context
-envtrace --context login PATH
-envtrace --context cron PATH
+```
+PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
 
-# Verbose output (shows skipped files)
-envtrace --verbose PATH
+TRACE (macOS Interactive Login):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1] /etc/zprofile:5
+    export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    → initializes to "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+[2] ~/.zshrc:12
+    export PATH="/opt/homebrew/bin:$PATH"
+    → prepends "/opt/homebrew/bin"
+
+FINAL: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+Trace in a specific shell context:
+
+```bash
+envtrace --context login PATH     # login shell
+envtrace --context interactive PATH  # non-login interactive shell
+envtrace --context cron PATH     # cron jobs / scripts
+envtrace --context launchd PATH  # macOS GUI apps (launchd agent)
+envtrace --context systemd PATH  # Linux systemd services
+```
+
+Use `--verbose` to see which files were checked but had no matches:
+
+```bash
+envtrace --verbose JAVA_HOME
 ```
 
 ### Find all definitions
 
+Search across all config files regardless of context -- useful when you're not sure where a variable is set:
+
 ```bash
-# Search all config files regardless of context
-envtrace --find PATH
 envtrace --find JAVA_HOME
+```
+
+```
+Found 2 definition(s) of JAVA_HOME:
+
+  ~/.zprofile:8
+    export JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
+
+  ~/.zshrc:45
+    export JAVA_HOME=$(/usr/libexec/java_home)
 ```
 
 ### Compare across contexts
 
+See how a variable's final value differs between shell contexts. This is especially useful for diagnosing "it works in my terminal but not in cron" problems:
+
 ```bash
-# See how a variable differs between login and cron
 envtrace -C login,cron PATH
 ```
 
+```
+Comparing PATH across contexts:
+
++----------------------------+----------------------------------------------+
+| Context                    | Value                                        |
++----------------------------+----------------------------------------------+
+| macOS Interactive Login    | /opt/homebrew/bin:/usr/local/bin:/usr/bin:... |
++----------------------------+----------------------------------------------+
+| Non-Interactive Non-Login  | /usr/bin:/bin:/usr/sbin:/sbin                |
++----------------------------+----------------------------------------------+
+```
+
+Available context names: `login`, `interactive`, `cron`, `launchd`, `systemd`, `noninteractive`.
+
 ### Trace shell functions
 
+Use `-F` to trace function definitions instead of variables. envtrace detects `function_name() { ... }` definitions, `autoload` declarations (zsh), and `unset -f` removals.
+
+Trace where a function is defined:
+
 ```bash
-# Trace a function definition
-envtrace -F my_function
+envtrace -F nvm
+```
 
-# Find all definitions of a function
+```
+nvm() [function]
+
+TRACE (macOS Interactive Login):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1] ~/.zshrc:23
+    nvm() {
+    → defines function (15 lines)
+       [ -z "$NVM_DIR" ] && return
+       \. "$NVM_DIR/nvm.sh"
+       nvm "$@"
+       ...
+
+DEFINED: yes
+```
+
+Trace an autoloaded zsh function:
+
+```bash
+envtrace -F compinit
+```
+
+```
+compinit() [function]
+
+TRACE (macOS Interactive Login):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1] /etc/zshrc:5
+    autoload -Uz compinit
+    → autoloads function (lazy-loaded on first call)
+
+DEFINED: yes
+```
+
+Find all files that define a function:
+
+```bash
 envtrace -F --find my_function
+```
 
-# Compare a function across contexts
+Compare a function across contexts:
+
+```bash
 envtrace -F -C login,interactive my_function
 ```
 
 ### JSON output
 
+All modes support `--format json` for scripting and integration with other tools:
+
 ```bash
 envtrace --format json PATH
-envtrace -F --format json my_function
+envtrace -F --format json nvm
+```
+
+```json
+{
+  "name": "PATH",
+  "final_value": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+  "context": "MacInteractiveLogin",
+  "changes": [
+    {
+      "file": "/etc/zprofile",
+      "line_number": 5,
+      "line_content": "export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "operation": "Export",
+      "value_before": null,
+      "value_after": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
+  ]
+}
 ```
 
 ### System sanity checks
 
+Run `--check` to scan your environment for common issues -- duplicate PATH entries, non-existent directories, and shell/launchd mismatches:
+
 ```bash
-# Check config files for common issues
 envtrace --check
+```
+
+```
+Environment Health Check
+
+PATH Analysis:
+────────────────────────────────────────
+
+! Non-existent directories in PATH:
+  - /usr/local/go/bin
+
+! Duplicate entries in PATH:
+  - /opt/homebrew/bin
+
+────────────────────────────────────────
+! 2 issue(s) found.
 ```
 
 ## Platform Support
