@@ -5,13 +5,13 @@
 //! 2. ProgramArguments that run `launchctl setenv VAR value`
 
 use std::path::Path;
-use std::process::Command;
 
-use crate::trace::{Operation, VariableChange};
+use crate::trace::VariableChange;
 
 /// Parse a launchd plist file for environment variable definitions
 #[cfg(target_os = "macos")]
 pub fn parse_plist_file(path: &Path, target_var: &str) -> std::io::Result<Vec<VariableChange>> {
+    use crate::trace::Operation;
     use plist::Value;
 
     let value = plist::from_file(path)
@@ -81,6 +81,8 @@ pub fn parse_plist_file(_path: &Path, _target_var: &str) -> std::io::Result<Vec<
 /// This shows what GUI apps will actually see.
 #[cfg(target_os = "macos")]
 pub fn launchctl_getenv(var: &str) -> Option<String> {
+    use std::process::Command;
+
     let output = Command::new("launchctl")
         .args(["getenv", var])
         .output()
