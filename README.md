@@ -56,8 +56,10 @@ Trace in a specific shell context:
 envtrace --context login PATH     # login shell
 envtrace --context interactive PATH  # non-login interactive shell
 envtrace --context cron PATH     # cron jobs / scripts
-envtrace --context launchd PATH  # macOS GUI apps (launchd agent)
-envtrace --context systemd PATH  # Linux systemd services
+envtrace --context launchd PATH      # macOS GUI apps (launchd agent)
+envtrace --context systemd PATH      # Linux systemd services
+envtrace --context systemd-user PATH # Linux systemd user services / environment.d
+envtrace --context uwsm PATH        # Linux UWSM Wayland sessions
 ```
 
 Use `--verbose` to see which files were checked but had no matches:
@@ -104,7 +106,7 @@ Comparing PATH across contexts:
 +----------------------------+----------------------------------------------+
 ```
 
-Available context names: `login`, `interactive`, `cron`, `launchd`, `systemd`, `noninteractive`.
+Available context names: `login`, `interactive`, `cron`, `launchd`, `systemd`, `systemd-user`, `uwsm`, `noninteractive`.
 
 ### Trace shell functions
 
@@ -220,13 +222,14 @@ PATH Analysis:
 | Platform | Shell | Contexts |
 |----------|-------|----------|
 | **macOS** | zsh | login, interactive, non-interactive, launchd agent/daemon |
-| **Linux** | bash | login, interactive, non-interactive (cron), systemd service/user |
+| **Linux** | bash | login, interactive, non-interactive (cron), systemd service/user, UWSM Wayland session |
 
 envtrace understands platform-specific differences:
 - macOS uses `/etc/zshenv`, `/etc/zprofile`, `~/.zshrc`, etc.
 - Linux uses `/etc/profile`, `/etc/profile.d/*.sh`, `~/.bashrc`, etc.
 - macOS launchd agents use plist files (does not inherit shell env)
-- Linux systemd services use unit files and environment.d
+- Linux systemd services use unit files and `environment.d/*.conf`
+- Linux UWSM sessions layer `uwsm/env*` files from XDG directories on top of systemd user environment
 
 ## Building from Source
 
