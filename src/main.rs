@@ -127,6 +127,8 @@ fn context_from_arg(arg: ContextArg, platform: Platform) -> Context {
         (ContextArg::Interactive, Platform::Linux) => Context::InteractiveNonLogin,
         (ContextArg::Cron, _) => Context::NonInteractiveNonLogin,
         (ContextArg::Systemd, _) => Context::SystemdService,
+        (ContextArg::SystemdUser, _) => Context::SystemdUser,
+        (ContextArg::Uwsm, _) => Context::Uwsm,
         (ContextArg::Launchd, _) => Context::LaunchdAgent,
     }
 }

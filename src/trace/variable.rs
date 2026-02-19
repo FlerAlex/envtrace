@@ -57,6 +57,8 @@ pub enum Context {
     SystemdService,
     /// Systemd user service
     SystemdUser,
+    /// UWSM Wayland compositor session
+    Uwsm,
 
     // macOS contexts
     /// macOS interactive login shell (zsh default)
@@ -98,6 +100,7 @@ impl Context {
             Context::NonInteractiveNonLogin => "non-interactive shell (cron, scripts)",
             Context::SystemdService => "systemd system service",
             Context::SystemdUser => "systemd user service",
+            Context::Uwsm => "UWSM Wayland session",
             Context::MacInteractiveLogin => "zsh interactive login shell",
             Context::MacInteractiveNonLogin => "zsh interactive non-login shell",
             Context::MacNonInteractive => "zsh non-interactive shell",

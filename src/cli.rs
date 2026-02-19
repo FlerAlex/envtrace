@@ -62,6 +62,10 @@ pub enum ContextArg {
     Cron,
     /// Systemd service (Linux only)
     Systemd,
+    /// Systemd user service / environment.d (Linux only)
+    SystemdUser,
+    /// UWSM Wayland compositor session (Linux only)
+    Uwsm,
     /// Launchd agent - GUI apps (macOS only)
     Launchd,
 }

@@ -56,6 +56,8 @@ fn parse_context_name(name: &str, platform: Platform) -> Option<Context> {
         ("interactive", Platform::Linux) => Some(Context::InteractiveNonLogin),
         ("cron", _) => Some(Context::NonInteractiveNonLogin),
         ("systemd", _) => Some(Context::SystemdService),
+        ("systemd-user", _) => Some(Context::SystemdUser),
+        ("uwsm", _) => Some(Context::Uwsm),
         ("launchd", _) => Some(Context::LaunchdAgent),
         ("noninteractive", Platform::MacOS) => Some(Context::MacNonInteractive),
         ("noninteractive", Platform::Linux) => Some(Context::NonInteractiveNonLogin),

@@ -252,8 +252,9 @@ impl TraceEngine {
                 file_changes
             }),
             FileType::Plist => parse_plist_file(&config_file.path, var_name),
-            FileType::SystemdUnit | FileType::SystemdEnvironmentD => {
-                // TODO: Implement systemd parsers
+            FileType::SystemdEnvironmentD => parse_environment_file(&config_file.path, var_name),
+            FileType::SystemdUnit => {
+                // TODO: Implement systemd unit file parser
                 Ok(vec![])
             }
         };
@@ -393,5 +394,50 @@ mod tests {
         assert_eq!(changes.len(), 1);
         assert_eq!(changes[0].operation, Operation::Append);
         assert_eq!(changes[0].value_after, "/usr/bin:/new/path");
+    }
+
+    #[test]
+    fn test_systemd_env_d_parsed() {
+        let dir = TempDir::new().unwrap();
+        let conf = create_test_file(
+            &dir,
+            "00-vars.conf",
+            "# comment line\nSYSTEMD_EDITOR=micro\nOTHER_VAR=foo\n",
+        );
+
+        let config = ConfigFile::new(conf, FileType::SystemdEnvironmentD, "test env.d");
+
+        let mut engine = TraceEngine::new(Platform::detect());
+        let mut current_value = None;
+        let mut changes = Vec::new();
+
+        engine.process_file(&config, "SYSTEMD_EDITOR", &mut current_value, &mut changes);
+
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].value_after, "micro");
+        assert_eq!(changes[0].operation, Operation::Set);
+        assert_eq!(current_value, Some("micro".to_string()));
+    }
+
+    #[test]
+    fn test_systemd_env_d_skips_comments_and_blanks() {
+        let dir = TempDir::new().unwrap();
+        let conf = create_test_file(
+            &dir,
+            "test.conf",
+            "# this is a comment\n\n\nMY_VAR=hello\n# another comment\n",
+        );
+
+        let config = ConfigFile::new(conf, FileType::SystemdEnvironmentD, "test env.d");
+
+        let mut engine = TraceEngine::new(Platform::detect());
+        let mut current_value = None;
+        let mut changes = Vec::new();
+
+        engine.process_file(&config, "MY_VAR", &mut current_value, &mut changes);
+
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].value_after, "hello");
+        assert_eq!(changes[0].line_number, 4);
     }
 }
