@@ -10,13 +10,13 @@ fn home_dir() -> Option<PathBuf> {
 /// Collect environment.d/*.conf files from a directory, sorted lexicographically
 fn collect_env_d_confs(dir: &std::path::Path, description: &'static str) -> Vec<ConfigFile> {
     let mut paths: Vec<PathBuf> = Vec::new();
-    if dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().is_some_and(|e| e == "conf") {
-                    paths.push(path);
-                }
+    if dir.exists()
+        && let Ok(entries) = std::fs::read_dir(dir)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().is_some_and(|e| e == "conf") {
+                paths.push(path);
             }
         }
     }
@@ -33,12 +33,11 @@ fn collect_env_d_confs(dir: &std::path::Path, description: &'static str) -> Vec<
 pub fn parse_uwsm_unit_output(output: &str) -> Option<String> {
     for line in output.lines() {
         let unit_name = line.split_whitespace().next()?;
-        if let Some(rest) = unit_name.strip_prefix("wayland-wm@") {
-            if let Some(desktop) = rest.strip_suffix(".desktop.service") {
-                if !desktop.is_empty() {
-                    return Some(desktop.to_string());
-                }
-            }
+        if let Some(rest) = unit_name.strip_prefix("wayland-wm@")
+            && let Some(desktop) = rest.strip_suffix(".desktop.service")
+            && !desktop.is_empty()
+        {
+            return Some(desktop.to_string());
         }
     }
     None
@@ -331,32 +330,32 @@ pub fn all_config_files() -> Vec<ConfigFile> {
             PathBuf::from("/etc/xdg/uwsm"),
             h.join(".config/uwsm"),
         ] {
-            if uwsm_dir.exists() {
-                if let Ok(entries) = std::fs::read_dir(&uwsm_dir) {
-                    let mut paths: Vec<PathBuf> = entries
-                        .flatten()
-                        .map(|e| e.path())
-                        .filter(|p| {
-                            p.file_name()
-                                .and_then(|n| n.to_str())
-                                .is_some_and(|n| n.starts_with("env"))
-                        })
-                        .collect();
-                    paths.sort();
-                    for path in paths {
-                        if path.is_dir() {
-                            // Scan drop-in directories
-                            if let Ok(sub_entries) = std::fs::read_dir(&path) {
-                                let mut sub_paths: Vec<PathBuf> =
-                                    sub_entries.flatten().map(|e| e.path()).collect();
-                                sub_paths.sort();
-                                for sub_path in sub_paths {
-                                    files.push(ConfigFile::shell(sub_path, "uwsm env"));
-                                }
+            if uwsm_dir.exists()
+                && let Ok(entries) = std::fs::read_dir(&uwsm_dir)
+            {
+                let mut paths: Vec<PathBuf> = entries
+                    .flatten()
+                    .map(|e| e.path())
+                    .filter(|p| {
+                        p.file_name()
+                            .and_then(|n| n.to_str())
+                            .is_some_and(|n| n.starts_with("env"))
+                    })
+                    .collect();
+                paths.sort();
+                for path in paths {
+                    if path.is_dir() {
+                        // Scan drop-in directories
+                        if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                            let mut sub_paths: Vec<PathBuf> =
+                                sub_entries.flatten().map(|e| e.path()).collect();
+                            sub_paths.sort();
+                            for sub_path in sub_paths {
+                                files.push(ConfigFile::shell(sub_path, "uwsm env"));
                             }
-                        } else {
-                            files.push(ConfigFile::shell(path, "uwsm env"));
                         }
+                    } else {
+                        files.push(ConfigFile::shell(path, "uwsm env"));
                     }
                 }
             }
